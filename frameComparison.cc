@@ -347,16 +347,17 @@
 //     return 0;
 // }
 
-
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RVec.hxx>
 #include <TFile.h>
 #include <TTree.h>
+#include <TH2F.h>
+#include <TLorentzVector.h>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
 #include <tuple>
-#include <TLorentzVector.h>
+
 
 // Hash function for std::tuple
 namespace std {
@@ -383,25 +384,25 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     ROOT::RDataFrame df1(tree1, file1);
     ROOT::RDataFrame df2(tree2, file2);
 
-    // Read the columns into vectors
-    std::vector<std::vector<unsigned long long>> column1Data;
-    std::vector<std::vector<unsigned long long>> column2Data;
+    // Maps to store column data
+    std::unordered_map<std::string, std::vector<unsigned long long>> column1Data;
+    std::unordered_map<std::string, std::vector<unsigned long long>> column2Data;
 
-    std::vector<std::vector<unsigned int>> column1UintData;
-    std::vector<std::vector<unsigned int>> column2UintData;
+    std::unordered_map<std::string, std::vector<unsigned int>> column1UintData;
+    std::unordered_map<std::string, std::vector<unsigned int>> column2UintData;
 
     // Retrieve data for each column based on its type
     for (const auto& colName : columnNames) {
         if (colName == "event") {
             auto result1 = df1.Take<unsigned long long>(colName);
             auto result2 = df2.Take<unsigned long long>(colName);
-            column1Data.push_back(*result1);
-            column2Data.push_back(*result2);
+            column1Data[colName] = *result1;
+            column2Data[colName] = *result2;
         } else {
             auto result1 = df1.Take<unsigned int>(colName);
             auto result2 = df2.Take<unsigned int>(colName);
-            column1UintData.push_back(*result1);
-            column2UintData.push_back(*result2);
+            column1UintData[colName] = *result1;
+            column2UintData[colName] = *result2;
         }
     }
 
@@ -414,34 +415,34 @@ void matchTrees(const std::string& file1, const std::string& tree1,
                      unsigned int, unsigned int, unsigned int>> col2Vec;
 
     // Populate col1Vec
-    for (size_t i = 0; i < column1Data[0].size(); ++i) {
+    for (size_t i = 0; i < column1Data["event"].size(); ++i) {
         col1Vec.emplace_back(
-            column1Data[0][i],
-            column1UintData[0][i],
-            column1UintData[1][i],
-            column1UintData[2][i],
-            column1UintData[3][i],
-            column1UintData[4][i],
-            column1UintData[5][i],
-            column1UintData[6][i],
-            column1UintData[7][i],
-            column1UintData[8][i]
+            column1Data["event"][i],
+            column1UintData["run"][i],
+            column1UintData["beam_beamid"][i],
+            column1UintData["pip_trkid"][i],
+            column1UintData["pim_trkid"][i],
+            column1UintData["p_trkid"][i],
+            column1UintData["g1_showid"][i],
+            column1UintData["g2_showid"][i],
+            column1UintData["g3_showid"][i],
+            column1UintData["g4_showid"][i]
         );
     }
 
     // Populate col2Vec
-    for (size_t i = 0; i < column2Data[0].size(); ++i) {
+    for (size_t i = 0; i < column2Data["event"].size(); ++i) {
         col2Vec.emplace_back(
-            column2Data[0][i],
-            column2UintData[0][i],
-            column2UintData[1][i],
-            column2UintData[2][i],
-            column2UintData[3][i],
-            column2UintData[4][i],
-            column2UintData[5][i],
-            column2UintData[6][i],
-            column2UintData[7][i],
-            column2UintData[8][i]
+            column2Data["event"][i],
+            column2UintData["run"][i],
+            column2UintData["beam_beamid"][i],
+            column2UintData["pip_trkid"][i],
+            column2UintData["pim_trkid"][i],
+            column2UintData["p_trkid"][i],
+            column2UintData["g1_showid"][i],
+            column2UintData["g2_showid"][i],
+            column2UintData["g3_showid"][i],
+            column2UintData["g4_showid"][i]
         );
     }
 
@@ -464,6 +465,20 @@ void matchTrees(const std::string& file1, const std::string& tree1,
         additionalData2[testColumnName] = *df2.Take<TLorentzVector>(testColumnName);
     }
 
+    // Retrieve "chisq/ndf" 
+    auto kinChiSq1 = df1.Take<float>("kin_chisq");
+    auto kinChiSq2 = df2.Take<float>("kin_chisq");
+    auto kinNdf1 = df1.Take<unsigned int>("kin_ndf");
+    auto kinNdf2 = df2.Take<unsigned int>("kin_ndf");
+    std::vector<float> kinChiSqVec1 = *kinChiSq1;
+    std::vector<float> kinChiSqVec2 = *kinChiSq2;
+    std::vector<unsigned int> kinNdfVec1 = *kinNdf1;    
+    std::vector<unsigned int> kinNdfVec2 = *kinNdf2;
+
+    TFile outFile("output.root", "RECREATE");
+    TH2F hist("h_chisq/ndf", "#chi^{2}/ndf Comparison;#chi^{2}/ndf Tree1;#chi^{2}/ndf Tree2", 100, 0, 1000, 100, 0, 1000);
+
+
     // Process matches
     for (size_t i = 0; i < col2Vec.size(); ++i) {
         const auto& key = col2Vec[i];
@@ -481,12 +496,14 @@ void matchTrees(const std::string& file1, const std::string& tree1,
             std::cout << "Matched values:" << std::endl;
             std::cout << "In first tree:" << std::endl;
             for (size_t index : it->second) {
+                hist.Fill(kinChiSqVec1[index]/kinNdfVec1[index], 
+                          kinChiSqVec2[i]/kinNdfVec2[i]);
                 std::cout << "Index " << index << ": ";
                 for (const auto& colName : columnNames) {
                     if (colName == "event") {
-                        std::cout << column1Data[0][index] << " ";
+                        std::cout << column1Data[colName][index] << " ";
                     } else {
-                        std::cout << column1UintData[0][index] << " "; // Assuming all non-event columns are uint and print the first column for simplicity
+                        std::cout << column1UintData[colName][index] << " ";
                     }
                 }
                 std::cout << std::endl;
@@ -495,16 +512,16 @@ void matchTrees(const std::string& file1, const std::string& tree1,
             std::cout << "Index " << i << ": ";
             for (const auto& colName : columnNames) {
                 if (colName == "event") {
-                    std::cout << column2Data[0][i] << " ";
+                    std::cout << column2Data[colName][i] << " ";
                 } else {
-                    std::cout << column2UintData[0][i] << " "; // Assuming all non-event columns are uint and print the first column for simplicity
+                    std::cout << column2UintData[colName][i] << " ";
                 }
             }
             std::cout << std::endl;
 
             // Print the TLorentzVector values for the matched indices for each test column
             for (const auto& testColumnName : testColumnNames) {
-                const auto& vec1 = additionalData1[testColumnName][i];
+                const auto& vec1 = additionalData2[testColumnName][i];
                 std::cout << "Value of " << testColumnName << " at index " << i << " in the second tree: "
                           << "Px: " << vec1.Px() << ", "
                           << "Py: " << vec1.Py() << ", "
@@ -522,6 +539,10 @@ void matchTrees(const std::string& file1, const std::string& tree1,
             }
         }
     }
+
+    // Write the histogram to file and clean up
+    outFile.Write();
+    outFile.Close();
 }
 
 int main() {
@@ -534,7 +555,7 @@ int main() {
                             "g2_showid", "g3_showid", "g4_showid"};
     std::vector<std::string> testColumnNames = {"pip_p4_meas", "pim_p4_meas",
                             "beam_p4_meas", "p_p4_meas", "g1_p4_meas", 
-                            "g2_p4_meas", "g3_p4_meas", "g4_p4_meas" };
+                            "g2_p4_meas", "g3_p4_meas", "g4_p4_meas"};
 
     matchTrees(file1, tree1, file2, tree2, columnNames, testColumnNames);
 
