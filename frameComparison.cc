@@ -4,108 +4,6 @@
 // #include <TTree.h>
 // #include <iostream>
 // #include <unordered_map>
-
-// // Custom hash function for std::pair
-// namespace std {
-//     template<typename T1, typename T2>
-//     struct hash<std::pair<T1, T2>> {
-//         size_t operator()(const std::pair<T1, T2>& p) const {
-//             auto h1 = std::hash<T1>{}(p.first);
-//             auto h2 = std::hash<T2>{}(p.second);
-//             return h1 ^ (h2 << 1); // Combine hash values
-//         }
-//     };
-// }
-
-// void matchTrees(const std::string& file1, const std::string& tree1,
-//                 const std::string& file2, const std::string& tree2,
-//                 const std::string& columnName) {
-//     // Open the ROOT files and access the trees
-//     ROOT::RDataFrame df1(tree1, file1);
-//     ROOT::RDataFrame df2(tree2, file2);
-
-//     // Read the columns into RVec (ROOT's vector-like container)
-//     auto column1 = df1.Take<unsigned long long>(columnName);  // Replace 'unsigned long long' with the appropriate type of your column
-//     auto column2 = df2.Take<unsigned long long>(columnName);  // Replace 'unsigned long long' with the appropriate type of your column
-
-//     auto beamID1 = df1.Take<int>('beam_beamid');
-//     auto beamID2 = df2.Take<int>('beam_beamid');
-
-//     // // Convert RVec to STL containers
-//     // std::vector<unsigned long long> col1Vec;
-//     // std::vector<unsigned long long> col2Vec;
-
-//     // // Populate col1Vec
-//     // for (const auto& val : column1) {
-//     //     col1Vec.push_back(val);
-//     // }
-
-//     // // Populate col2Vec
-//     // for (const auto& val : column2) {
-//     //     col2Vec.push_back(val);
-//     // }
-
-//      // Convert RVec to STL containers
-//     std::vector<std::pair<unsigned long long, int>> col1Vec;
-//     std::vector<std::pair<unsigned long long, int>> col2Vec;
-
-//     // Populate col1Vec
-//     for (size_t i = 0; i < column1.size(); ++i) {
-//         col1Vec.emplace_back(column1[i], beamID1[i]);
-//     }
-
-//     // Populate col2Vec
-//     for (size_t i = 0; i < column2.size(); ++i) {
-//         col2Vec.emplace_back(column2[i], beamID2[i]);
-//     }
-
-//     // // Create a hash map to store values and their indices from the first tree
-//     // std::unordered_map<unsigned long long, std::vector<size_t>> indexMap;
-//     // for (size_t i = 0; i < col1Vec.size(); ++i) {
-//     //     indexMap[col1Vec[i]].push_back(i);
-//     // }
-//       // Create a hash map to store values and their indices from the first tree
-//     std::unordered_map<std::pair<unsigned long long, int>, std::vector<size_t>> indexMap;
-//     for (size_t i = 0; i < col1Vec.size(); ++i) {
-//         indexMap[col1Vec[i]].push_back(i);
-//     }
-
-//     // Match entries from the second tree with those from the first tree
-//     for (size_t i = 0; i < col2Vec.size(); ++i) {
-//         // auto it = indexMap.find(col2Vec[i]);
-//         const auto& key = col2Vec[i];
-//         auto it = indexMap.find(key);
-//         if (it != indexMap.end()) {
-//             //std::cout << "Value " << col2Vec[i] << " found in both trees." << std::endl;
-//             std::cout << "Value " << col2Vec[i].first << " and beamID " << col2Vec[i].second << " found in both trees." << std::endl;
-//             std::cout << "Indices in first tree: ";
-//             for (size_t index : it->second) {
-//                 std::cout << index << " ";
-//             }
-//             std::cout << std::endl;
-//             std::cout << "Index in second tree: " << i << std::endl;
-//         }
-//     }
-// }
-
-// int main() {
-//   std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
-//     std::string tree1 = "pi0pippimeta__B4";
-//     std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
-//     std::string tree2 = "pi0pippimeta__B4_M17";
-//     std::string columnName = "event";
-
-//     matchTrees(file1, tree1, file2, tree2, columnName);
-
-//     return 0;
-// }
-
-// #include <ROOT/RDataFrame.hxx>
-// #include <ROOT/RVec.hxx>
-// #include <TFile.h>
-// #include <TTree.h>
-// #include <iostream>
-// #include <unordered_map>
 // #include <vector>
 // #include <utility>
 // #include <functional>
@@ -181,8 +79,10 @@
 // int main() {
 //     std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
 //     std::string tree1 = "pi0pippimeta__B4";
-//     std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
-//     std::string tree2 = "pi0pippimeta__B4_M17";
+//     // std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
+//     // std::string tree2 = "pi0pippimeta__B4_M17";
+//     std::string file2 = "lorax/tree_pi0pi0pippim__B4_M7_030406_flat.root";
+//     std::string tree2 = "pi0pi0pippim__B4_M7";
 //     std::string columnName = "event";
 
 //     matchTrees(file1, tree1, file2, tree2, columnName);
@@ -336,8 +236,10 @@
 // int main() {
 //     std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
 //     std::string tree1 = "pi0pippimeta__B4";
-//     std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
-//     std::string tree2 = "pi0pippimeta__B4_M17";
+//     // std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
+//     // std::string tree2 = "pi0pippimeta__B4_M17";
+//     std::string file2 = "lorax/tree_pi0pi0pippim__B4_M7_030406_flat.root";
+//     std::string tree2 = "pi0pi0pippim__B4_M7";
 //     std::vector<std::string> columnNames = {"event", "run", "beam_beamid", 
 //                             "pip_trkid", "pim_trkid", "p_trkid", "g1_showid", 
 //                             "g2_showid", "g3_showid", "g4_showid"};
@@ -346,6 +248,8 @@
 
 //     return 0;
 // }
+
+
 
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RVec.hxx>
@@ -374,6 +278,38 @@ namespace std {
             return seed;
         }
     };
+}
+
+// Struct to hold sortable columns with an index
+template<typename T>
+struct SortableColumn {
+    T value;
+    int index;
+
+    bool operator<(const SortableColumn& other) const {
+        return value < other.value;
+    }
+};
+
+// Helper function to sort specific columns
+template<typename T1, typename T2, typename T3, typename T4, typename... Ts>
+std::tuple<T1, T2, T3, T4, Ts...> sortSelectedTuple(
+    const T1& col1, const T2& col2, const T3& col3, const T4& col4, const Ts&... others) {
+    
+    // Create a vector of the sortable columns
+    std::vector<SortableColumn<T1>> columns = {{col1, 0}, {col2, 1}, {col3, 2}, {col4, 3}};
+    
+    // Sort the columns based on the value
+    std::sort(columns.begin(), columns.end());
+    
+    // Extract sorted columns
+    T1 sortedCol1 = columns[0].value;
+    T1 sortedCol2 = columns[1].value;
+    T1 sortedCol3 = columns[2].value;
+    T1 sortedCol4 = columns[3].value;
+
+    // Return the sorted tuple along with the other columns
+    return std::make_tuple(sortedCol1, sortedCol2, sortedCol3, sortedCol4, others...);
 }
 
 void matchTrees(const std::string& file1, const std::string& tree1,
@@ -446,14 +382,28 @@ void matchTrees(const std::string& file1, const std::string& tree1,
         );
     }
 
-    // Create a hash map to store values and their indices from the first tree
+    // Create a hash map to store sorted tuples and their indices from the first tree
     std::unordered_map<
-        std::tuple<unsigned long long, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int>,
+        std::tuple<unsigned long long, unsigned int, unsigned int, unsigned int, unsigned int, 
+                   unsigned int, unsigned int, unsigned int, unsigned int, unsigned int>,
         std::vector<size_t>
     > indexMap;
 
-    for (size_t i = 0; i < col1Vec.size(); ++i) {
-        indexMap[col1Vec[i]].push_back(i);
+    // Populate col1Vec with sorted tuples for specific columns
+    for (size_t i = 0; i < column1Data["event"].size(); ++i) {
+        auto key = sortSelectedTuple(
+            column1UintData["g1_showid"][i],
+            column1UintData["g2_showid"][i],
+            column1UintData["g3_showid"][i],
+            column1UintData["g4_showid"][i],
+            column1Data["event"][i],
+            column1UintData["run"][i],
+            column1UintData["beam_beamid"][i],
+            column1UintData["pip_trkid"][i],
+            column1UintData["pim_trkid"][i],
+            column1UintData["p_trkid"][i]
+        );
+        indexMap[key].push_back(i);
     }
 
     // Retrieve TLorentzVector data for each test column
@@ -476,12 +426,25 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     std::vector<unsigned int> kinNdfVec2 = *kinNdf2;
 
     TFile outFile("output.root", "RECREATE");
-    TH2F hist("h_chisq/ndf", "#chi^{2}/ndf Comparison;#chi^{2}/ndf Tree1;#chi^{2}/ndf Tree2", 100, 0, 1000, 100, 0, 1000);
+    TString histAxis =  "#chi^{2}/ndf Comparison;"\
+                        "#chi^{2}/ndf " + tree1 +";"\
+                        "#chi^{2}/ndf " + tree2;
+    TH2F hist("h_chisq/ndf",histAxis, 100, 0, 1000, 100, 0, 1000);
 
-
-    // Process matches
+    // Process matches using sorted tuples for specific columns
     for (size_t i = 0; i < col2Vec.size(); ++i) {
-        const auto& key = col2Vec[i];
+        auto key = sortSelectedTuple(
+            column2UintData["g1_showid"][i],
+            column2UintData["g2_showid"][i],
+            column2UintData["g3_showid"][i],
+            column2UintData["g4_showid"][i],
+            column2Data["event"][i],
+            column2UintData["run"][i],
+            column2UintData["beam_beamid"][i],
+            column2UintData["pip_trkid"][i],
+            column2UintData["pim_trkid"][i],
+            column2UintData["p_trkid"][i]
+        );       
         auto it = indexMap.find(key);
         if (it != indexMap.end()) {
             std::cout << "Match found!" << std::endl;
@@ -543,6 +506,7 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     // Write the histogram to file and clean up
     outFile.Write();
     outFile.Close();
+    std::cout << "end of code" << std::endl;
 }
 
 int main() {
@@ -550,6 +514,10 @@ int main() {
     std::string tree1 = "pi0pippimeta__B4";
     std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
     std::string tree2 = "pi0pippimeta__B4_M17";
+    // std::string file1 = "lorax/tree_pi0pi0pippim__B4_M7_030406_flat.root";
+    // std::string tree1 = "pi0pi0pippim__B4_M7";
+    // std::string file2 = "lorax/tree_pippimetaeta__B4_M17_030406_flat.root";
+    // std::string tree2 = "pippimetaeta__B4_M17";
     std::vector<std::string> columnNames = {"event", "run", "beam_beamid", 
                             "pip_trkid", "pim_trkid", "p_trkid", "g1_showid", 
                             "g2_showid", "g3_showid", "g4_showid"};
