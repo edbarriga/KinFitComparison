@@ -1,276 +1,3 @@
-// #include <ROOT/RDataFrame.hxx>
-// #include <ROOT/RVec.hxx>
-// #include <TFile.h>
-// #include <TTree.h>
-// #include <TH2F.h>
-// #include <TLorentzVector.h>
-// #include <iostream>
-// #include <unordered_map>
-// #include <vector>
-// #include <tuple>
-// #include <algorithm>
-
-// // Hash function for std::tuple
-// namespace std {
-//     template<typename... Ts>
-//     struct hash<std::tuple<Ts...>> {
-//         size_t operator()(const std::tuple<Ts...>& t) const {
-//             return hash_tuple_impl(t, std::index_sequence_for<Ts...>{});
-//         }
-//     private:
-//         template<std::size_t... I>
-//         size_t hash_tuple_impl(const std::tuple<Ts...>& t, std::index_sequence<I...>) const {
-//             size_t seed = 0;
-//             (..., (seed ^= std::hash<Ts>{}(std::get<I>(t)) + 0x9e3779b9 + (seed << 6) + (seed >> 2)));
-//             return seed;
-//         }
-//     };
-// }
-
-// // Struct to hold sortable columns with an index
-// template<typename T>
-// struct SortableColumn {
-//     T value;
-//     int index;
-
-//     bool operator<(const SortableColumn& other) const {
-//         return value < other.value;
-//     }
-// };
-
-// // Helper function to sort columns and create a tuple dynamically
-// template<typename... Ts>
-// auto sortSelectedTuple(const Ts&... columns) {
-//     std::vector<SortableColumn<std::decay_t<Ts>>> sortableColumns;
-//     size_t index = 0;
-//     ((sortableColumns.emplace_back(SortableColumn<std::decay_t<Ts>>{columns, index++})), ...);
-
-//     std::sort(sortableColumns.begin(), sortableColumns.end());
-
-//     std::tuple<Ts...> sortedTuple;
-//     index = 0;
-//     ((std::get<index++>(sortedTuple) = sortableColumns[index - 1].value), ...);
-
-//     return sortedTuple;
-// }
-
-// void matchTrees(const std::string& file1, const std::string& tree1,
-//                 const std::string& file2, const std::string& tree2,
-//                 const std::vector<std::string>& columnNames,
-//                 const std::vector<std::string>& testColumnNames) {
-//     // Open the ROOT files and access the trees
-//     ROOT::RDataFrame df1(tree1, file1);
-//     ROOT::RDataFrame df2(tree2, file2);
-
-//     // Maps to store column data
-//     std::unordered_map<std::string, std::vector<unsigned long long>> column1Data;
-//     std::unordered_map<std::string, std::vector<unsigned long long>> column2Data;
-
-//     std::unordered_map<std::string, std::vector<unsigned int>> gShowColumnData1;
-//     std::unordered_map<std::string, std::vector<unsigned int>> column2UintData;
-
-//     // Retrieve data for each column based on its type
-//     for (const auto& colName : columnNames) {
-//         if (colName == "event") {
-//             auto result1 = df1.Take<unsigned long long>(colName);
-//             auto result2 = df2.Take<unsigned long long>(colName);
-//             column1Data[colName] = *result1;
-//             column2Data[colName] = *result2;
-//         } else {
-//             auto result1 = df1.Take<unsigned int>(colName);
-//             auto result2 = df2.Take<unsigned int>(colName);
-//             gShowColumnData1[colName] = *result1;
-//             column2UintData[colName] = *result2;
-//         }
-//     }
-
-//     // Convert vec to tuple dynamically
-//     std::vector<std::tuple<unsigned long long, unsigned int, unsigned int,
-//                      unsigned int, unsigned int, unsigned int, unsigned int, 
-//                      unsigned int, unsigned int, unsigned int>> col1Vec;
-//     std::vector<std::tuple<unsigned long long, unsigned int, unsigned int, 
-//                      unsigned int, unsigned int, unsigned int, unsigned int, 
-//                      unsigned int, unsigned int, unsigned int>> col2Vec;
-
-//     // Populate col1Vec
-//     for (size_t i = 0; i < column1Data["event"].size(); ++i) {
-//         col1Vec.emplace_back(
-//             column1Data["event"][i],
-//             gShowColumnData1["run"][i],
-//             gShowColumnData1["beam_beamid"][i],
-//             gShowColumnData1["pip_trkid"][i],
-//             gShowColumnData1["pim_trkid"][i],
-//             gShowColumnData1["p_trkid"][i],
-//             gShowColumnData1["g1_showid"][i],
-//             gShowColumnData1["g2_showid"][i],
-//             gShowColumnData1["g3_showid"][i],
-//             gShowColumnData1["g4_showid"][i]
-//         );
-//     }
-
-//     // Populate col2Vec
-//     for (size_t i = 0; i < column2Data["event"].size(); ++i) {
-//         col2Vec.emplace_back(
-//             column2Data["event"][i],
-//             column2UintData["run"][i],
-//             column2UintData["beam_beamid"][i],
-//             column2UintData["pip_trkid"][i],
-//             column2UintData["pim_trkid"][i],
-//             column2UintData["p_trkid"][i],
-//             column2UintData["g1_showid"][i],
-//             column2UintData["g2_showid"][i],
-//             column2UintData["g3_showid"][i],
-//             column2UintData["g4_showid"][i]
-//         );
-//     }
-
-//     // Create a hash map to store sorted tuples and their indices from the first tree
-//     std::unordered_map<
-//         std::tuple<unsigned long long, unsigned int, unsigned int, unsigned int, unsigned int, 
-//                    unsigned int, unsigned int, unsigned int, unsigned int, unsigned int>,
-//         std::vector<size_t>
-//     > indexMap;
-
-//     // Populate col1Vec with sorted tuples for specific columns
-//     for (size_t i = 0; i < column1Data["event"].size(); ++i) {
-//         auto key = sortSelectedTuple(
-//             gShowColumnData1["g1_showid"][i],
-//             gShowColumnData1["g2_showid"][i],
-//             gShowColumnData1["g3_showid"][i],
-//             gShowColumnData1["g4_showid"][i],
-//             column1Data["event"][i],
-//             gShowColumnData1["run"][i],
-//             gShowColumnData1["beam_beamid"][i],
-//             gShowColumnData1["pip_trkid"][i],
-//             gShowColumnData1["pim_trkid"][i],
-//             gShowColumnData1["p_trkid"][i]
-//         );
-//         indexMap[key].push_back(i);
-//     }
-
-//     // Retrieve TLorentzVector data for each test column
-//     std::unordered_map<std::string, std::vector<TLorentzVector>> additionalData1;
-//     std::unordered_map<std::string, std::vector<TLorentzVector>> additionalData2;
-
-//     for (const auto& testColumnName : testColumnNames) {
-//         additionalData1[testColumnName] = *df1.Take<TLorentzVector>(testColumnName);
-//         additionalData2[testColumnName] = *df2.Take<TLorentzVector>(testColumnName);
-//     }
-
-//     // Retrieve "chisq/ndf" 
-//     auto kinChiSq1 = df1.Take<float>("kin_chisq");
-//     auto kinChiSq2 = df2.Take<float>("kin_chisq");
-//     auto kinNdf1 = df1.Take<unsigned int>("kin_ndf");
-//     auto kinNdf2 = df2.Take<unsigned int>("kin_ndf");
-//     std::vector<float> kinChiSqVec1 = *kinChiSq1;
-//     std::vector<float> kinChiSqVec2 = *kinChiSq2;
-//     std::vector<unsigned int> kinNdfVec1 = *kinNdf1;    
-//     std::vector<unsigned int> kinNdfVec2 = *kinNdf2;
-
-//     TFile outFile("output.root", "RECREATE");
-//     TString histAxis =  "#chi^{2}/ndf Comparison;"\
-//                         "#chi^{2}/ndf " + tree1 +";"\
-//                         "#chi^{2}/ndf " + tree2;
-//     TH2F hist("h_chisq/ndf", histAxis, 100, 0, 1000, 100, 0, 1000);
-
-//     // Process matches using sorted tuples for specific columns
-//     for (size_t i = 0; i < col2Vec.size(); ++i) {
-//         auto key = sortSelectedTuple(
-//             column2UintData["g1_showid"][i],
-//             column2UintData["g2_showid"][i],
-//             column2UintData["g3_showid"][i],
-//             column2UintData["g4_showid"][i],
-//             column2Data["event"][i],
-//             column2UintData["run"][i],
-//             column2UintData["beam_beamid"][i],
-//             column2UintData["pip_trkid"][i],
-//             column2UintData["pim_trkid"][i],
-//             column2UintData["p_trkid"][i]
-//         );       
-
-//         auto it = indexMap.find(key);
-//         if (it != indexMap.end()) {
-//             std::cout << "Match found!" << std::endl;
-//             std::cout << "Indices in first tree: ";
-//             for (size_t index : it->second) {
-//                 std::cout << index << " ";
-//             }
-//             std::cout << std::endl;
-//             std::cout << "Index in second tree: " << i << std::endl;
-
-//             // Print the matched values
-//             std::cout << "Matched values:" << std::endl;
-//             std::cout << "In first tree:" << std::endl;
-//             for (size_t index : it->second) {
-//                 hist.Fill(kinChiSqVec1[index] / kinNdfVec1[index], 
-//                           kinChiSqVec2[i] / kinNdfVec2[i]);
-//                 std::cout << "Index " << index << ": ";
-//                 for (const auto& colName : columnNames) {
-//                     if (colName == "event") {
-//                         std::cout << column1Data[colName][index] << " ";
-//                     } else {
-//                         std::cout << gShowColumnData1[colName][index] << " ";
-//                     }
-//                 }
-//                 std::cout << std::endl;
-//             }
-//             std::cout << "In second tree:" << std::endl;
-//             std::cout << "Index " << i << ": ";
-//             for (const auto& colName : columnNames) {
-//                 if (colName == "event") {
-//                     std::cout << column2Data[colName][i] << " ";
-//                 } else {
-//                     std::cout << column2UintData[colName][i] << " ";
-//                 }
-//             }
-//             std::cout << std::endl;
-
-//             // Print the TLorentzVector values for the matched indices for each test column
-//             for (const auto& testColumnName : testColumnNames) {
-//                 const auto& vec1 = additionalData2[testColumnName][i];
-//                 std::cout << "Value of " << testColumnName << " at index " << i << " in the second tree: "
-//                           << "Px: " << vec1.Px() << ", "
-//                           << "Py: " << vec1.Py() << ", "
-//                           << "Pz: " << vec1.Pz() << ", "
-//                           << "E: " << vec1.E() << std::endl;
-
-//                 for (size_t index : it->second) {
-//                     const TLorentzVector& vecInFirstTree = additionalData1[testColumnName][index];
-//                     std::cout << "Value of " << testColumnName << " at index " << index << " in the first tree: "
-//                               << "Px: " << vecInFirstTree.Px() << ", "
-//                               << "Py: " << vecInFirstTree.Py() << ", "
-//                               << "Pz: " << vecInFirstTree.Pz() << ", "
-//                               << "E: " << vecInFirstTree.E() << std::endl;
-//                 }
-//             }
-//         }
-//     }
-
-//     // Write the histogram to file and clean up
-//     outFile.Write();
-//     outFile.Close();
-//     std::cout << "end of code" << std::endl;
-// }
-
-// int main() {
-//     std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
-//     std::string tree1 = "pi0pippimeta__B4";
-//     std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
-//     std::string tree2 = "pi0pippimeta__B4_M17";
-//     std::vector<std::string> columnNames = {"event", "run", "beam_beamid", 
-//                             "pip_trkid", "pim_trkid", "p_trkid", "g1_showid", 
-//                             "g2_showid", "g3_showid", "g4_showid"};
-//     std::vector<std::string> testColumnNames = {"pip_p4_meas", "pim_p4_meas",
-//                             "beam_p4_meas", "p_p4_meas", "g1_p4_meas", 
-//                             "g2_p4_meas", "g3_p4_meas", "g4_p4_meas"};
-
-//     matchTrees(file1, tree1, file2, tree2, columnNames, testColumnNames);
-
-//     return 0;
-// }
-
-
-
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RVec.hxx>
 #include <TFile.h>
@@ -282,20 +9,18 @@
 #include <vector>
 #include <algorithm>
 #include <tuple>
+#include <sstream>
+#include <cstddef>
 
-
-// Helper function to check if a string ends with a given suffix
-bool endsWith(const std::string& str, const std::string& suffix) {
-    if (suffix.size() > str.size()) return false;
-    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-}
-
-// Helper function to get the substring before the last underscore
-// it helps to group +(p) and -(m) tracks
+// Get the substring before the underscore (_). The grouping is for 
+// tracks. Positive tracks will have a 'p' and negative tracks a 'm'
 std::string getPrefixBeforeLastUnderscore(const std::string& str) {
     size_t pos = str.rfind('_');
     if (pos != std::string::npos && pos > 0) {
-        return str.substr(0, pos);
+        // Looking at only the character before the '_' will avoid the 
+        // need to specify every possible particle. At the end, the main
+        // reason to group them is to allow for index permutation
+        return str.substr(pos-1, 1);
     }
     // Print error message if no underscore is found
     std::cerr << "Error: Column name \"" << str << 
@@ -303,16 +28,26 @@ std::string getPrefixBeforeLastUnderscore(const std::string& str) {
     return ""; // Return empty string if no underscore is found
 }
 
-// Helper function to check if a string starts with a specific character
+// Check if a string starts with a specific character. This is a safety 
+// check to make sure there are only photons (gammas) as showers
 bool startsWith(const std::string& str, char prefix) {
     return !str.empty() && str[0] == prefix;
 }
 
-// Function to process columns and extract those ending with specific suffixes
+// Check if a string ends with a given suffix. Charge particles: 'trkid'
+// and photons: 'showid'
+bool endsWith(const std::string& str, const std::string& suffix) {
+    if (suffix.size() > str.size()) return false;
+    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+}
+
+// Process columns and extract those ending with specific suffixes.
+// This function could be broken to allow the  extraction of other 
+// columns like the measured 4-momenta 'p4_meas'
 void processColumns(ROOT::RDataFrame& df,
                     std::vector<std::string>& trkidCols,
                     std::vector<std::string>& showidCols) {
-    // Retrieve column names
+
     auto columnNames = df.GetColumnNames();
     
     // Filter columns based on suffix
@@ -325,8 +60,10 @@ void processColumns(ROOT::RDataFrame& df,
     }
 }
 
-
-// Hash function for std::tuple
+// Hash function to compare the entries. Maybe this is safer if it is 
+// written in its own namespace rather than the std. Right now, it works
+// and since I don't know much about hash functions, I'll keep it this
+// way until I can get more feedback about it
 namespace std {
     template<typename... Ts>
     struct hash<std::tuple<Ts...>> {
@@ -334,10 +71,25 @@ namespace std {
             return hash_tuple_impl(t, std::index_sequence_for<Ts...>{});
         }
     private:
-        template<std::size_t... I>
-        size_t hash_tuple_impl(const std::tuple<Ts...>& t, std::index_sequence<I...>) const {
-            size_t seed = 0;
-            (..., (seed ^= std::hash<Ts>{}(std::get<I>(t)) + 0x9e3779b9 + (seed << 6) + (seed >> 2)));
+        template<std::size_t Index>
+        struct hash_helper {
+            static void hash_combine(size_t& seed, const std::tuple<Ts...>& t) {
+                std::hash<typename std::tuple_element<Index, std::tuple<Ts...>>::type> hasher;
+                size_t h = hasher(std::get<Index>(t));
+                seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+        };
+
+        // Base case: empty index sequence
+        size_t hash_tuple_impl(const std::tuple<Ts...>& t, std::index_sequence<>) const {
+            return 0;
+        }
+
+        // Recursive case: process elements and combine hashes
+        template<std::size_t I, std::size_t... Is>
+        size_t hash_tuple_impl(const std::tuple<Ts...>& t, std::index_sequence<I, Is...>) const {
+            size_t seed = hash_tuple_impl(t, std::index_sequence<Is...>{});
+            hash_helper<I>::hash_combine(seed, t);
             return seed;
         }
     };
@@ -375,6 +127,21 @@ std::tuple<T1, T2, T3, T4, Ts...> sortSelectedTuple(
     return std::make_tuple(sortedCol1, sortedCol2, sortedCol3, sortedCol4, others...);
 }
 
+// Helper function to test if coloumn vectors are the same size in each tree
+void doSizesMatch( const std::string& coloumn1Name, 
+                   std::size_t coloumn1Size, 
+                   const std::string& coloumn2Name, 
+                   std::size_t coloumn2Size){
+    if( coloumn1Size != coloumn2Size ) {
+        std::stringstream errorMessage;
+        errorMessage << "The size of " << coloumn1Name << " (" << coloumn1Size
+            << ") does not match the size of " << coloumn2Name 
+            << " (" << coloumn2Size << ")";
+        throw std::runtime_error(errorMessage.str());
+    }
+}
+
+
 void matchTrees(const std::string& file1, const std::string& tree1,
                 const std::string& file2, const std::string& tree2,
                 const std::vector<std::string>& testColumnNames) {
@@ -383,7 +150,7 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     ROOT::RDataFrame df1(tree1, file1);
     ROOT::RDataFrame df2(tree2, file2);
 
-    //These are the columns that all tree will have
+    //These are the columns that all trees will have
     std::vector<std::string> fixedColumnNames = {"event", "run", "beam_beamid"};
     // Maps to store fixed column data
     std::unordered_map<std::string, std::vector<unsigned long long>> 
@@ -399,15 +166,15 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     // Retrieve data for each fixed column based on its type
     for (const auto& colName : fixedColumnNames) {
         if (colName == "event") {
-            auto result1 = df1.Take<unsigned long long>(colName);
-            auto result2 = df2.Take<unsigned long long>(colName);
-            eventColumnData1[colName] = *result1;
-            eventColumnData2[colName] = *result2;
+            auto branch1 = df1.Take<unsigned long long>(colName);
+            auto branch2 = df2.Take<unsigned long long>(colName);
+            eventColumnData1[colName] = *branch1;
+            eventColumnData2[colName] = *branch2;
         } else {
-            auto result1 = df1.Take<unsigned int>(colName);
-            auto result2 = df2.Take<unsigned int>(colName);
-            runBeamcolumnData1[colName] = *result1;
-            runBeamcolumnData2[colName] = *result2;
+            auto branch1 = df1.Take<unsigned int>(colName);
+            auto branch2 = df2.Take<unsigned int>(colName);
+            runBeamcolumnData1[colName] = *branch1;
+            runBeamcolumnData2[colName] = *branch2;
         }
     }
 
@@ -427,147 +194,111 @@ void matchTrees(const std::string& file1, const std::string& tree1,
       positiveTrkColumnData1;
     std::unordered_map<std::string, std::vector<unsigned int>> 
       negativeTrkColumnData1;
-    // Note, I think we only have shower from photons
+    // Note: I think we only have shower from photons
     std::unordered_map<std::string, std::vector<unsigned int>> 
       gShowColumnData1;
 
+    // Repeat for the second data set
     std::unordered_map<std::string, std::vector<unsigned int>> 
       positiveTrkColumnData2;
     std::unordered_map<std::string, std::vector<unsigned int>> 
       negativeTrkColumnData2;
-    // Note, I think we only have shower from photons
     std::unordered_map<std::string, std::vector<unsigned int>> 
       gShowColumnData2;
 
     for (const auto &colName : trkidColumnNamesData1){
         // Read the values from the coloumns
-        auto result1 = df1.Take<unsigned int>(colName);
+        auto branch1 = df1.Take<unsigned int>(colName);
         // Extract the letter before the last underscore
         std::string prefix = getPrefixBeforeLastUnderscore(colName);
         // Group based on the specific prefix
-        if (prefix == "p" || prefix == "pip"){
-            positiveTrkColumnData1[colName] = *result1;
+        if (prefix == "p"){
+            positiveTrkColumnData1[colName] = *branch1;
         }
-        else if (prefix == "pim"){
-            negativeTrkColumnData1[colName] = *result1;
+        else if (prefix == "m"){
+            negativeTrkColumnData1[colName] = *branch1;
         }
     }
 
     for (const auto &colName : trkidColumnNamesData2){
         // Read the values from the coloumns
-        auto result2 = df2.Take<unsigned int>(colName);
+        auto branch2 = df2.Take<unsigned int>(colName);
         // Extract the letter before the last underscore
         std::string prefix = getPrefixBeforeLastUnderscore(colName);
         // Group based on the specific prefix
-        if (prefix == "p" || prefix == "pip"){
-            positiveTrkColumnData2[colName] = *result2;
+        if (prefix == "p"){
+            positiveTrkColumnData2[colName] = *branch2;
         }
-        else if (prefix == "pim"){
-            negativeTrkColumnData2[colName] = *result2;
+        else if (prefix == "m"){
+            negativeTrkColumnData2[colName] = *branch2;
         }
     }
 
     for (const auto& colName : showidColumnNamesData1) {
         // Read the values from the coloumns
-        auto result1 = df1.Take<unsigned int>(colName);
-        // Check if the prefix starts with 'g'
+        auto branch1 = df1.Take<unsigned int>(colName);
+        // A safe check to make sure we have only photons
         if (startsWith(colName, 'g')) {
-            gShowColumnData1[colName] = *result1;
+            gShowColumnData1[colName] = *branch1;
         }
     }
 
     for (const auto& colName : showidColumnNamesData2) {
         // Read the values from the coloumns
-        auto result2 = df2.Take<unsigned int>(colName);
-        // Check if the prefix starts with 'g'
+        auto branch2 = df2.Take<unsigned int>(colName);
         if (startsWith(colName, 'g')) {
-            gShowColumnData2[colName] = *result2;
+            gShowColumnData2[colName] = *branch2;
         }
     }
 
-    // Convert vec to tuple
-    std::vector<std::tuple<unsigned long long, unsigned int, unsigned int,
-                     unsigned int, unsigned int, unsigned int, unsigned int, 
-                     unsigned int, unsigned int, unsigned int>> col1Vec;
-    std::vector<std::tuple<unsigned long long, unsigned int, unsigned int, 
-                     unsigned int, unsigned int, unsigned int, unsigned int, 
-                     unsigned int, unsigned int, unsigned int>> col2Vec;
 
-
-
-
-    if ( 
-    eventColumnData1["event"].size() != runBeamcolumnData1["run"].size() ||
-    eventColumnData1["event"].size() != runBeamcolumnData1["beam_beamid"].size() ||
-    eventColumnData1["event"].size() != positiveTrkColumnData1["pip_trkid"].size() ||
-    eventColumnData1["event"].size() != positiveTrkColumnData1["p_trkid"].size() ||
-    eventColumnData1["event"].size() != gShowColumnData1["g1_showid"].size() ||
-    eventColumnData1["event"].size() != gShowColumnData1["g2_showid"].size() ||
-    eventColumnData1["event"].size() != gShowColumnData1["g3_showid"].size() ||
-    eventColumnData1["event"].size() != gShowColumnData1["g4_showid"].size()
-    ) {
-        throw std::runtime_error("Vector sizes do not match");
+ 
+    // Safety check to see if the vectors have the same size
+    for(const auto& columnNameIt : runBeamcolumnData1){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData1["event"].size(),
+                 columnTest, runBeamcolumnData1[columnTest].size());
+    }
+    
+    for(const auto& columnNameIt : negativeTrkColumnData1){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData1["event"].size(),
+                 columnTest, negativeTrkColumnData1[columnTest].size());
     }
 
-        if ( 
-    eventColumnData2["event"].size() != runBeamcolumnData2["run"].size() ||
-    eventColumnData2["event"].size() != runBeamcolumnData2["beam_beamid"].size() ||
-    eventColumnData2["event"].size() != negativeTrkColumnData2["pim_trkid"].size() ||
-    eventColumnData2["event"].size() != positiveTrkColumnData2["pip_trkid"].size() ||
-    eventColumnData2["event"].size() != positiveTrkColumnData2["p_trkid"].size() ||
-    eventColumnData2["event"].size() != gShowColumnData2["g1_showid"].size() ||
-    eventColumnData2["event"].size() != gShowColumnData2["g2_showid"].size() ||
-    eventColumnData2["event"].size() != gShowColumnData2["g3_showid"].size() ||
-    eventColumnData2["event"].size() != gShowColumnData2["g4_showid"].size()
-    ) {
-        throw std::runtime_error("Vector sizes do not match");
+    for(const auto& columnNameIt : positiveTrkColumnData1){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData1["event"].size(),
+                 columnTest, positiveTrkColumnData1[columnTest].size());
     }
 
-
-
-    // std::cout << "Sizes of vectors:" << std::endl;
-    // std::cout << "eventColumnData1[event]: " << eventColumnData1["event"].size() << std::endl;
-    // std::cout << "runBeamcolumnData1[run]: " << runBeamcolumnData1["run"].size() << std::endl;
-    // std::cout << "runBeamcolumnData1[beam_beamid]: " << runBeamcolumnData1["beam_beamid"].size() << std::endl;
-    // std::cout << "positiveTrkColumnData1[pip_trkid]: " << positiveTrkColumnData1["pip_trkid"].size() << std::endl;
-    // std::cout << "negativeTrkColumnData1[pim_trkid]: " << negativeTrkColumnData1["pim_trkid"].size() << std::endl;
-    // std::cout << "positiveTrkColumnData1[p_trkid]: " << positiveTrkColumnData1["p_trkid"].size() << std::endl;
-    // std::cout << "gShowColumnData1[g1_showid]: " << gShowColumnData1["g1_showid"].size() << std::endl;
-    // std::cout << "gShowColumnData1[g2_showid]: " << gShowColumnData1["g2_showid"].size() << std::endl;
-    // std::cout << "gShowColumnData1[g3_showid]: " << gShowColumnData1["g3_showid"].size() << std::endl;
-    // std::cout << "gShowColumnData1[g4_showid]: " << gShowColumnData1["g4_showid"].size() << std::endl;
-
-
-    // Populate col1Vec
-    for (size_t i = 0; i < eventColumnData1["event"].size(); ++i) {
-        col1Vec.emplace_back(
-            eventColumnData1["event"][i],
-            runBeamcolumnData1["run"][i],
-            runBeamcolumnData1["beam_beamid"][i],
-            positiveTrkColumnData1["pip_trkid"][i],
-            negativeTrkColumnData1["pim_trkid"][i],
-            positiveTrkColumnData1["p_trkid"][i],
-            gShowColumnData1["g1_showid"][i],
-            gShowColumnData1["g2_showid"][i],
-            gShowColumnData1["g3_showid"][i],
-            gShowColumnData1["g4_showid"][i]
-        );
+    for(const auto& columnNameIt : gShowColumnData2){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData2["event"].size(),
+                 columnTest, gShowColumnData2[columnTest].size());
+    }
+    for(const auto& columnNameIt : runBeamcolumnData2){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData2["event"].size(),
+                 columnTest, runBeamcolumnData2[columnTest].size());
+    }
+    
+    for(const auto& columnNameIt : negativeTrkColumnData2){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData2["event"].size(),
+                 columnTest, negativeTrkColumnData2[columnTest].size());
     }
 
-    // Populate col2Vec
-    for (size_t i = 0; i < eventColumnData2["event"].size(); ++i) {
-        col2Vec.emplace_back(
-            eventColumnData2["event"][i],
-            runBeamcolumnData2["run"][i],
-            runBeamcolumnData2["beam_beamid"][i],
-            positiveTrkColumnData2["pip_trkid"][i],
-            negativeTrkColumnData2["pim_trkid"][i],
-            positiveTrkColumnData2["p_trkid"][i],
-            gShowColumnData2["g1_showid"][i],
-            gShowColumnData2["g2_showid"][i],
-            gShowColumnData2["g3_showid"][i],
-            gShowColumnData2["g4_showid"][i]
-        );
+    for(const auto& columnNameIt : positiveTrkColumnData2){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData2["event"].size(),
+                 columnTest, positiveTrkColumnData2[columnTest].size());
+    }
+    
+    for(const auto& columnNameIt : gShowColumnData2){
+        const std::string& columnTest = columnNameIt.first;
+        doSizesMatch( "event", eventColumnData2["event"].size(),
+                 columnTest, gShowColumnData2[columnTest].size());
     }
 
     // Create a hash map to store sorted tuples and their indices from the first tree
@@ -585,11 +316,11 @@ void matchTrees(const std::string& file1, const std::string& tree1,
             gShowColumnData1["g3_showid"][i],
             gShowColumnData1["g4_showid"][i],
             eventColumnData1["event"][i],
-            runBeamcolumnData2["run"][i],
-            runBeamcolumnData2["beam_beamid"][i],
-            positiveTrkColumnData2["pip_trkid"][i],
-            negativeTrkColumnData2["pim_trkid"][i],
-            positiveTrkColumnData2["p_trkid"][i]
+            runBeamcolumnData1["run"][i],
+            runBeamcolumnData1["beam_beamid"][i],
+            positiveTrkColumnData1["pip_trkid"][i],
+            negativeTrkColumnData1["pim_trkid"][i],
+            positiveTrkColumnData1["p_trkid"][i]
         );
         indexMap[key].push_back(i);
     }
@@ -620,7 +351,7 @@ void matchTrees(const std::string& file1, const std::string& tree1,
     TH2F hist("h_chisq/ndf",histAxis, 100, 0, 1000, 100, 0, 1000);
 
     // Process matches using sorted tuples for specific columns
-    for (size_t i = 0; i < col2Vec.size(); ++i) {
+    for (size_t i = 0; i < eventColumnData2["event"].size(); ++i) {
         auto key = sortSelectedTuple(
             gShowColumnData2["g1_showid"][i],
             gShowColumnData2["g2_showid"][i],
@@ -742,4 +473,86 @@ int main() {
 
     return 0;
 }
+
+// This Could help to make the sorting of columns dyanmic
+// // Definition of SortableColumn with type support for arbitrary types
+// template<typename T>
+// struct SortableColumn {
+//     T value;
+//     int index;
+
+//     bool operator<(const SortableColumn& other) const {
+//         return value < other.value;
+//     }
+// };
+
+// // Helper function to create a vector of SortableColumn objects
+// template<typename T>
+// std::vector<SortableColumn<T>> createSortableColumns(const T& col, int index) {
+//     return { SortableColumn<T>{col, index} };
+// }
+
+// // Base case for handling a single column
+// template<typename T>
+// std::vector<SortableColumn<T>> createSortableColumnsHelper(const T& col, int index) {
+//     return createSortableColumns(col, index);
+// }
+
+// // Recursive case for handling multiple columns
+// template<typename T1, typename T2, typename... Ts>
+// std::vector<SortableColumn<typename std::common_type<T1, T2, Ts...>::type>>
+// createSortableColumnsHelper(const T1& col1, const T2& col2, const Ts&... cols) {
+//     using CommonType = typename std::common_type<T1, T2, Ts...>::type;
+//     std::vector<SortableColumn<CommonType>> sortableColumns = {
+//         SortableColumn<CommonType>{col1, 0},
+//         SortableColumn<CommonType>{col2, 1}
+//     };
+//     int index = 2;
+//     // Recursively add the remaining columns
+//     std::vector<SortableColumn<CommonType>> remainingColumns = createSortableColumnsHelper(cols..., index);
+//     sortableColumns.insert(sortableColumns.end(), remainingColumns.begin(), remainingColumns.end());
+//     return sortableColumns;
+// }
+
+// // Forward declarations of the helper functions
+// template<std::size_t Index, typename T, typename... Ts>
+// typename std::enable_if<Index == sizeof...(Ts), void>::type
+// assignValuesToTuple(std::tuple<Ts...>&, const std::vector<SortableColumn<T>>& );
+
+// template<std::size_t Index, typename T, typename... Ts>
+// typename std::enable_if<Index < sizeof...(Ts), void>::type
+// assignValuesToTuple(std::tuple<Ts...>& t, const std::vector<SortableColumn<T>>& v);
+
+// // Helper function to sort and return the tuple
+// template<typename... Ts>
+// std::tuple<Ts...> sortSelectedTuple(const Ts&... columns) {
+//     static_assert(sizeof...(columns) >= 1, "At least one column is required.");
+
+//     using CommonType = typename std::common_type<Ts...>::type;
+//     std::vector<SortableColumn<CommonType>> sortableColumns = createSortableColumnsHelper(columns...);
+
+//     if (sortableColumns.size() > 1) {
+//         std::sort(sortableColumns.begin(), sortableColumns.end());
+//     }
+
+//     // Prepare to extract sorted columns into a tuple
+//     std::tuple<Ts...> sortedTuple;
+//     assignValuesToTuple<0, Ts...>(sortedTuple, sortableColumns);
+
+//     return sortedTuple;
+// }
+
+// // Helper function to manually assign sorted values to a tuple
+// template<std::size_t Index, typename T, typename... Ts>
+// typename std::enable_if<Index == sizeof...(Ts), void>::type
+// assignValuesToTuple(std::tuple<Ts...>&, const std::vector<SortableColumn<T>>& ) {
+//     // Base case: do nothing
+// }
+
+// template<std::size_t Index, typename T, typename... Ts>
+// typename std::enable_if<Index < sizeof...(Ts), void>::type
+// assignValuesToTuple(std::tuple<Ts...>& t, const std::vector<SortableColumn<T>>& v) {
+//     std::get<Index>(t) = v[Index].value;
+//     assignValuesToTuple<Index + 1, Ts...>(t, v); // Recurse
+// }
 

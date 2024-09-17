@@ -447,57 +447,57 @@ void matchTrees(const std::string& file1, const std::string& tree1,
         );       
         auto it = indexMap.find(key);
         if (it != indexMap.end()) {
-            std::cout << "Match found!" << std::endl;
-            std::cout << "Indices in first tree: ";
+            // std::cout << "Match found!" << std::endl;
+            // std::cout << "Indices in first tree: ";
             for (size_t index : it->second) {
-                std::cout << index << " ";
+	      //std::cout << index << " ";
             }
-            std::cout << std::endl;
-            std::cout << "Index in second tree: " << i << std::endl;
+            // std::cout << std::endl;
+            // std::cout << "Index in second tree: " << i << std::endl;
 
             // Print the matched values
-            std::cout << "Matched values:" << std::endl;
-            std::cout << "In first tree:" << std::endl;
+            // std::cout << "Matched values:" << std::endl;
+            // std::cout << "In first tree:" << std::endl;
             for (size_t index : it->second) {
                 hist.Fill(kinChiSqVec1[index]/kinNdfVec1[index], 
                           kinChiSqVec2[i]/kinNdfVec2[i]);
-                std::cout << "Index " << index << ": ";
+                // std::cout << "Index " << index << ": ";
                 for (const auto& colName : columnNames) {
                     if (colName == "event") {
-                        std::cout << column1Data[colName][index] << " ";
+		      // std::cout << column1Data[colName][index] << " ";
                     } else {
-                        std::cout << column1UintData[colName][index] << " ";
+		      // std::cout << column1UintData[colName][index] << " ";
                     }
                 }
-                std::cout << std::endl;
+                // std::cout << std::endl;
             }
-            std::cout << "In second tree:" << std::endl;
-            std::cout << "Index " << i << ": ";
+            // std::cout << "In second tree:" << std::endl;
+            // std::cout << "Index " << i << ": ";
             for (const auto& colName : columnNames) {
                 if (colName == "event") {
-                    std::cout << column2Data[colName][i] << " ";
+		  // std::cout << column2Data[colName][i] << " ";
                 } else {
-                    std::cout << column2UintData[colName][i] << " ";
+                  //  std::cout << column2UintData[colName][i] << " ";
                 }
             }
-            std::cout << std::endl;
+            //std::cout << std::endl;
 
             // Print the TLorentzVector values for the matched indices for each test column
             for (const auto& testColumnName : testColumnNames) {
                 const auto& vec1 = additionalData2[testColumnName][i];
-                std::cout << "Value of " << testColumnName << " at index " << i << " in the second tree: "
-                          << "Px: " << vec1.Px() << ", "
-                          << "Py: " << vec1.Py() << ", "
-                          << "Pz: " << vec1.Pz() << ", "
-                          << "E: " << vec1.E() << std::endl;
+                // std::cout << "Value of " << testColumnName << " at index " << i << " in the second tree: "
+                //           << "Px: " << vec1.Px() << ", "
+                //           << "Py: " << vec1.Py() << ", "
+                //           << "Pz: " << vec1.Pz() << ", "
+                //           << "E: " << vec1.E() << std::endl;
 
                 for (size_t index : it->second) {
                     const TLorentzVector& vecInFirstTree = additionalData1[testColumnName][index];
-                    std::cout << "Value of " << testColumnName << " at index " << index << " in the first tree: "
-                              << "Px: " << vecInFirstTree.Px() << ", "
-                              << "Py: " << vecInFirstTree.Py() << ", "
-                              << "Pz: " << vecInFirstTree.Pz() << ", "
-                              << "E: " << vecInFirstTree.E() << std::endl;
+                    // std::cout << "Value of " << testColumnName << " at index " << index << " in the first tree: "
+                    //           << "Px: " << vecInFirstTree.Px() << ", "
+                    //           << "Py: " << vecInFirstTree.Py() << ", "
+                    //           << "Pz: " << vecInFirstTree.Pz() << ", "
+                    //           << "E: " << vecInFirstTree.E() << std::endl;
                 }
             }
         }
@@ -510,14 +510,14 @@ void matchTrees(const std::string& file1, const std::string& tree1,
 }
 
 int main() {
-    std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
-    std::string tree1 = "pi0pippimeta__B4";
-    std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
-    std::string tree2 = "pi0pippimeta__B4_M17";
-    // std::string file1 = "lorax/tree_pi0pi0pippim__B4_M7_030406_flat.root";
-    // std::string tree1 = "pi0pi0pippim__B4_M7";
-    // std::string file2 = "lorax/tree_pippimetaeta__B4_M17_030406_flat.root";
-    // std::string tree2 = "pippimetaeta__B4_M17";
+    // std::string file1 = "lorax/tree_pi0pippimeta__B4_030406_flat.root";
+    // std::string tree1 = "pi0pippimeta__B4";
+    //std::string file2 = "lorax/tree_pi0pippimeta__B4_M17_030406_flat.root";
+    //std::string tree2 = "pi0pippimeta__B4_M17";
+    std::string file1 = "lorax/tree_pi0pi0pippim__B4_M7_030406_flat.root";
+    std::string tree1 = "pi0pi0pippim__B4_M7";
+    std::string file2 = "lorax/tree_pippimetaeta__B4_M17_030406_flat.root";
+    std::string tree2 = "pippimetaeta__B4_M17";
     std::vector<std::string> columnNames = {"event", "run", "beam_beamid", 
                             "pip_trkid", "pim_trkid", "p_trkid", "g1_showid", 
                             "g2_showid", "g3_showid", "g4_showid"};
